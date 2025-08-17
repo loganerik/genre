@@ -1,0 +1,8 @@
+{
+  "name": "genre-generator-vercel",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "openai": "^4.56.0"
+  }
+}
