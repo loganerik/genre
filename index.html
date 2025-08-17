@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Genre Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- We'll load families dynamically via WebFont Loader too -->
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root{
+      --bg: #0b0b0f;
+      --fg: #ffffff;
+      --primary: #8a89ff;
+      --secondary: #2dd4bf;
+      --accent: #f472b6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; background: radial-gradient(1200px 600px at 10% -10%, #0e0f1b, transparent),
+      radial-gradient(900px 400px at 110% 110%, #0b1117, transparent), var(--bg);
+      color: var(--fg); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      display:flex; align-items:center; justify-content:center;
+    }
+    .wrap{ width:min(1100px, 92vw); margin: 4vh auto; }
+    header{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+    .brand{ font-weight:800; letter-spacing:0.5px; opacity:0.92 }
+    .controls{ display:flex; gap:10px; flex-wrap:wrap }
+    .controls input[type="text"]{ flex: 1 1 260px; padding:12px 14px; border-radius:12px; border:1px solid #2a2a33; background:#101018; color:#e7e7ef; outline:none }
+    .controls input[type="range"]{ width:160px }
+    button{ padding:12px 16px; border:1px solid #2a2a33; background:#121221; color:#e7e7ef; border-radius:12px; cursor:pointer; transition:transform .08s ease, background .25s ease; }
+    button:hover{ transform: translateY(-1px); background:#17172a }
+
+    .stage{ position:relative; display:grid; grid-template-columns: 1fr 340px; gap:18px; }
+    .card{ position:relative; border-radius:28px; min-height: 520px; padding: 40px; overflow:hidden; border:1px solid rgba(255,255,255,.06); box-shadow: 0 30px 120px rgba(0,0,0,.45); }
+    .title{ font-size: clamp(42px, 9vw, 96px); line-height: .9; margin:0 0 14px 0; letter-spacing:-.5px; }
+    .tag{ font-size: clamp(16px, 2.4vw, 22px); opacity:.92; margin:0 }
+
+    .panel{ background: #0d0f16; border:1px solid #222436; border-radius:20px; padding:16px; }
+    .pair{ display:flex; align-items:center; justify-content:space-between; margin:8px 0; font-size:14px; }
+    .swatch{ width:28px; height:28px; border-radius:50%; border:1px solid rgba(255,255,255,.25) }
+
+    .texture::after{ content:""; position:absolute; inset:0; pointer-events:none; mix-blend-mode: overlay; opacity:.35; }
+    .tex-grain::after{ background-image:
+      radial-gradient(rgba(255,255,255,.12) 0.5px, transparent 0.5px);
+      background-size: 2px 2px;
+      opacity:.18;
+    }
+    .tex-gloss::after{ background: linear-gradient( to bottom, rgba(255,255,255,.12), transparent 40%, transparent 60%, rgba(255,255,255,.06) 100% ); }
+    .tex-paper::after{ background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.07), rgba(255,255,255,.07) 1px, transparent 1px, transparent 3px); opacity:.18; }
+    .tex-vhs::after{ background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0, rgba(255,255,255,.06) 1px, transparent 2px, transparent 3px); }
+    .tex-nebula::after{ background: radial-gradient(800px 400px at -10% 120%, rgba(255,255,255,.1), transparent), radial-gradient(600px 300px at 110% -10%, rgba(255,255,255,.08), transparent); }
+    .tex-neon::after{ box-shadow: inset 0 0 120px rgba(255,255,255,.08), inset 0 0 220px rgba(255,255,255,.06); }
+    .tex-linen::after{ background-image: linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(0deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 5px 100%, 100% 5px; opacity:.12; }
+    .tex-noise::after{ background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 3px 3px; opacity:.2; }
+
+    /* Shape layers */
+    .layer{ position:absolute; inset:0; }
+    .shape-waves{ background:
+      radial-gradient(60% 40% at 10% 10%, var(--secondary), transparent 60%),
+      radial-gradient(60% 40% at 90% 90%, var(--accent), transparent 60%),
+      radial-gradient(50% 50% at 50% 50%, color-mix(in oklab, var(--primary), transparent 65%), transparent 60%);
+      filter: blur(28px) saturate(1.1);
+    }
+    .shape-grid{ background-image:
+      linear-gradient(0deg, rgba(255,255,255,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity:.5;
+    }
+    .shape-dots{ background-image: radial-gradient(rgba(255,255,255,.22) 1px, transparent 1px); background-size: 14px 14px; opacity:.5 }
+    .shape-stripes{ background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.12) 0 8px, transparent 8px 20px); opacity:.45 }
+    .shape-rings{ background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,.22) 2px, transparent 2px); background-size: 40px 40px; opacity:.45 }
+    .shape-spray{ background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,.15), transparent 50%); filter: blur(14px); opacity:.5 }
+    .shape-burst{ background-image: conic-gradient(from 0deg, rgba(255,255,255,.1), transparent 50%, rgba(255,255,255,.12)); mask: radial-gradient(circle at 50% 50%, black 40%, transparent 75%); opacity:.6 }
+    .shape-checker{ background-image:
+      linear-gradient(45deg, rgba(255,255,255,.1) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255,255,255,.1) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,.1) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.1) 75%);
+      background-size: 24px 24px; background-position: 0 0, 0 12px, 12px -12px, -12px 0; opacity:.45
+    }
+
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
+    .small{ font-size:12px; opacity:.7 }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">🎛️ Genre Generator</div>
+      <div class="controls">
+        <input id="seed" type="text" placeholder="Optional vibe seed e.g. \"foggy city pop\"" />
+        <label class="small">Wildness
+          <input id="temp" type="range" min="0" max="1.3" step="0.1" value="0.9" />
+        </label>
+        <button id="go">Generate</button>
+        <button id="save">Download PNG</button>
+      </div>
+    </header>
+
+    <section class="stage">
+      <div id="card" class="card texture tex-grain">
+        <div id="shape" class="layer shape-waves"></div>
+        <h1 id="title" class="title">New Genre</h1>
+        <p id="tag" class="tag">Click Generate to conjure something strange and inspiring.</p>
+      </div>
+
+      <aside class="panel">
+        <div class="pair"><span>Font</span><span id="fontName" class="small">Inter</span></div>
+        <div class="pair"><span>Palette</span>
+          <span style="display:flex; gap:8px">
+            <span id="sw-bg" class="swatch" title="bg"></span>
+            <span id="sw-prim" class="swatch" title="primary"></span>
+            <span id="sw-sec" class="swatch" title="secondary"></span>
+            <span id="sw-acc" class="swatch" title="accent"></span>
+            <span id="sw-text" class="swatch" title="text"></span>
+          </span>
+        </div>
+        <div class="pair"><span>Texture</span><span id="textureName" class="small">grain</span></div>
+        <div class="pair"><span>Shape</span><span id="shapeName" class="small">waves</span></div>
+        <div class="pair"><span>Mood</span><span id="mood" class="small">—</span></div>
+        <div class="actions">
+          <button id="copyText">Copy text</button>
+          <button id="share" title="Copy a shareable JSON">Copy JSON</button>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+<script>
+  const FONT_BUCKETS = {
+    sans: ["Inter","Montserrat","Poppins","Raleway","Space Grotesk","Work Sans","Sora","Archivo","Chivo"],
+    serif: ["Playfair Display","Merriweather","Lora","DM Serif Display","Cormorant Garamond","Spectral","Gloock"],
+    mono: ["JetBrains Mono","IBM Plex Mono","Space Mono","Roboto Mono","VT323"],
+    display: ["Bebas Neue","Oswald","Alfa Slab One","Abril Fatface","Monoton","Bungee","Londrina Outline","Black Ops One"],
+    hand: ["Caveat","Shadows Into Light","Patrick Hand","Rock Salt","Amatic SC","Gloria Hallelujah"],
+    blackletter: ["UnifrakturMaguntia","Pirata One","MedievalSharp","New Rocker"]
+  };
+
+  function pickFont(style, weight) {
+    const list = FONT_BUCKETS[style] || FONT_BUCKETS["display"];
+    const name = list[Math.floor(Math.random()*list.length)];
+    return { name, weight: weight || "700" };
+  }
+
+  function loadFont(fontName) {
+    return new Promise((resolve) => {
+      WebFont.load({
+        google: { families: [fontName+":200,300,400,500,600,700,800,900"] },
+        active: resolve,
+        inactive: resolve
+      });
+    });
+  }
+
+  function setPalette(p) {
+    document.documentElement.style.setProperty('--bg', p.bg);
+    document.documentElement.style.setProperty('--fg', p.text);
+    document.documentElement.style.setProperty('--primary', p.primary);
+    document.documentElement.style.setProperty('--secondary', p.secondary);
+    document.documentElement.style.setProperty('--accent', p.accent);
+
+    document.getElementById('sw-bg').style.background = p.bg;
+    document.getElementById('sw-prim').style.background = p.primary;
+    document.getElementById('sw-sec').style.background = p.secondary;
+    document.getElementById('sw-acc').style.background = p.accent;
+    document.getElementById('sw-text').style.background = p.text;
+  }
+
+  function setTexture(tex){
+    const card = document.getElementById('card');
+    card.className = 'card texture';
+    const map = { grain:'tex-grain', gloss:'tex-gloss', paper:'tex-paper', vhs:'tex-vhs', nebula:'tex-nebula', neon:'tex-neon', linen:'tex-linen', noise:'tex-noise' };
+    card.classList.add(map[tex] || 'tex-grain');
+    document.getElementById('textureName').textContent = tex;
+  }
+
+  function setShape(name){
+    const layer = document.getElementById('shape');
+    layer.className = 'layer';
+    layer.classList.add('shape-'+(name || 'waves'));
+    document.getElementById('shapeName').textContent = name;
+  }
+
+  async function applyVisuals(obj){
+    const { title, tagline, palette, visuals } = obj;
+
+    setPalette(palette);
+    setTexture(visuals.texture);
+    setShape(visuals.shape);
+
+    const chosen = pickFont(visuals.font_style, visuals.weight);
+    await loadFont(chosen.name);
+    const titleEl = document.getElementById('title');
+    titleEl.style.fontFamily = `'${chosen.name}', system-ui, sans-serif`;
+    titleEl.style.fontWeight = visuals.weight || '800';
+    titleEl.textContent = title;
+
+    const tagEl = document.getElementById('tag');
+    tagEl.textContent = tagline;
+
+    document.getElementById('fontName').textContent = `${chosen.name} • ${visuals.font_style} ${visuals.weight}`;
+    document.getElementById('mood').textContent = visuals.mood;
+  }
+
+  async function generate(){
+    const seed = document.getElementById('seed').value.trim();
+    const temperature = parseFloat(document.getElementById('temp').value);
+    const btn = document.getElementById('go');
+    btn.disabled = true; btn.textContent = 'Thinking…';
+    try{
+      const r = await fetch('/api/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ seed, temperature }) });
+      const payload = await r.json();
+      if(!payload.ok) throw new Error(payload.error || 'Generation failed');
+      await applyVisuals(payload.data);
+      window._lastGenre = payload.data;
+    }catch(e){ alert(e.message || e); }
+    finally{ btn.disabled = false; btn.textContent = 'Generate'; }
+  }
+
+  async function downloadPNG(){
+    const node = document.getElementById('card');
+    const canvas = await html2canvas(node, {backgroundColor: null, scale: 2});
+    const link = document.createElement('a');
+    link.download = (window._lastGenre?.title || 'genre-card') + '.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+
+  function copyText(){
+    const g = window._lastGenre; if(!g) return;
+    const s = `${g.title}\n${g.tagline}`;
+    navigator.clipboard.writeText(s);
+  }
+
+  function copyJSON(){
+    const g = window._lastGenre; if(!g) return;
+    navigator.clipboard.writeText(JSON.stringify(g, null, 2));
+  }
+
+  document.getElementById('go').addEventListener('click', generate);
+  document.getElementById('save').addEventListener('click', downloadPNG);
+  document.getElementById('copyText').addEventListener('click', copyText);
+  document.getElementById('share').addEventListener('click', copyJSON);
+
+  // First paint placeholders
+  applyVisuals({
+    title:"Vapor Orchard",
+    tagline:"hazy cassette folk blooming under sodium streetlights",
+    palette:{ bg:"#0b0b0f", primary:"#8a89ff", secondary:"#2dd4bf", accent:"#f472b6", text:"#ffffff" },
+    visuals:{ font_style:"display", weight:"800", texture:"grain", shape:"waves", mood:"soft neon nostalgia" }
+  });
+</script>
+</body>
+</html>
